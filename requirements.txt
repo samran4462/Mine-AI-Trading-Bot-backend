@@ -6,5 +6,4 @@ langchain
 pandas
 numpy
 ccxt
-MetaTrader5
 python-dotenv
