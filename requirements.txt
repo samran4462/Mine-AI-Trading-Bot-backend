@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+langchain
+pandas
+numpy
+ccxt
+MetaTrader5
+python-dotenv
