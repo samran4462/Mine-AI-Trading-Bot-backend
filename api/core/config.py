@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # Configure these based on your environment
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000", "https://mine-ai-trading-bot.vercel.app"]
     
     # Add other configuration like DB URIs, API keys here
     BINANCE_API_KEY: str = os.getenv("BINANCE_API_KEY", "")
