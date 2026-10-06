@@ -42,8 +42,14 @@ class BinanceConnector:
                 if sym not in ['USDT', 'USDC']: # Exclude stablecoins
                     cg_symbols.append(f"{sym}/USDT")
             
-            # Use highly volatile and fast-moving altcoins instead of slow heavy majors
-            fast_altcoins = ["PEPE/USDT", "WIF/USDT", "DOGE/USDT", "SHIB/USDT", "SUI/USDT", "INJ/USDT", "FET/USDT"]
+            # Use top 25 highly volatile and fast-moving altcoins on Binance Futures
+            fast_altcoins = [
+                "WIF/USDT", "DOGE/USDT", "SUI/USDT", "NEAR/USDT", "SOL/USDT",
+                "PEPE/USDT", "SHIB/USDT", "AVAX/USDT", "APT/USDT", "FET/USDT",
+                "INJ/USDT", "SEI/USDT", "TIA/USDT", "RENDER/USDT", "GALA/USDT",
+                "OP/USDT", "ARB/USDT", "LINK/USDT", "ENA/USDT", "JUP/USDT",
+                "BONK/USDT", "FLOKI/USDT", "POPCAT/USDT", "FTM/USDT", "TON/USDT"
+            ]
             
             combined = fast_altcoins + cg_symbols
             # Remove duplicates while preserving order
@@ -58,8 +64,10 @@ class BinanceConnector:
         except Exception as e:
             print(f"CoinGecko Error, falling back: {e}")
             return [
-                "BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT", 
-                "ADA/USDT", "AVAX/USDT", "DOGE/USDT", "DOT/USDT", "LINK/USDT"
+                "WIF/USDT", "DOGE/USDT", "SUI/USDT", "NEAR/USDT", "SOL/USDT",
+                "PEPE/USDT", "SHIB/USDT", "AVAX/USDT", "APT/USDT", "FET/USDT",
+                "INJ/USDT", "SEI/USDT", "TIA/USDT", "RENDER/USDT", "GALA/USDT",
+                "OP/USDT", "ARB/USDT", "LINK/USDT", "ENA/USDT", "JUP/USDT"
             ][:limit]
 
     def execute_trade(self, symbol: str, side: str, amount_usdt: float, current_price: float, tp_price: float = None, sl_price: float = None, api_key: str = None, api_secret: str = None) -> dict:

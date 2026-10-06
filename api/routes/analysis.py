@@ -139,8 +139,8 @@ async def scan_single_token(req: SingleScanRequest):
         # 2. Bollinger Bands Calculation (Best for Fast, Safe 1m Scalping)
         df['sma_20'] = df['close'].rolling(window=20).mean()
         df['std_20'] = df['close'].rolling(window=20).std()
-        df['upper_bb'] = df['sma_20'] + (2.5 * df['std_20']) # 2.5 Standard Deviations (Extreme)
-        df['lower_bb'] = df['sma_20'] - (2.5 * df['std_20'])
+        df['upper_bb'] = df['sma_20'] + (2.0 * df['std_20']) # 2.0 Standard Deviations (Standard Scalper Setting)
+        df['lower_bb'] = df['sma_20'] - (2.0 * df['std_20'])
         
         latest = df.iloc[-1]
         rsi_val = latest.get('rsi', 50)
@@ -154,13 +154,13 @@ async def scan_single_token(req: SingleScanRequest):
         is_bb_oversold = latest['close'] <= latest['lower_bb']
         is_bb_overbought = latest['close'] >= latest['upper_bb']
         
-        # PERFECT CONFLUENCE: Price must be stretched below Lower Band AND RSI must be heavily oversold
-        if is_bb_oversold and (rsi_val < 30):
+        # Bullish Snapback: Touching lower band with low RSI, or deep oversold RSI
+        if (is_bb_oversold and rsi_val <= 38) or (rsi_val <= 28):
             ltf_bias = "bullish"
             liquidity_status = "AI_Confluence_Bullish"
                 
-        # PERFECT CONFLUENCE: Price must be stretched above Upper Band AND RSI must be heavily overbought
-        elif is_bb_overbought and (rsi_val > 70):
+        # Bearish Snapback: Touching upper band with high RSI, or deep overbought RSI
+        elif (is_bb_overbought and rsi_val >= 62) or (rsi_val >= 72):
             ltf_bias = "bearish"
             liquidity_status = "AI_Confluence_Bearish"
             
