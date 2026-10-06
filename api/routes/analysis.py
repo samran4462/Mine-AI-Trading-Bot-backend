@@ -154,13 +154,13 @@ async def scan_single_token(req: SingleScanRequest):
         is_bb_oversold = latest['close'] <= latest['lower_bb']
         is_bb_overbought = latest['close'] >= latest['upper_bb']
         
-        # AI Confluence Bullish: Price stretched far below Lower Band + RSI Oversold
-        if is_bb_oversold or (rsi_val < 35):
+        # PERFECT CONFLUENCE: Price must be stretched below Lower Band AND RSI must be heavily oversold
+        if is_bb_oversold and (rsi_val < 30):
             ltf_bias = "bullish"
             liquidity_status = "AI_Confluence_Bullish"
                 
-        # AI Confluence Bearish: Price stretched far above Upper Band + RSI Overbought
-        elif is_bb_overbought or (rsi_val > 65):
+        # PERFECT CONFLUENCE: Price must be stretched above Upper Band AND RSI must be heavily overbought
+        elif is_bb_overbought and (rsi_val > 70):
             ltf_bias = "bearish"
             liquidity_status = "AI_Confluence_Bearish"
             
