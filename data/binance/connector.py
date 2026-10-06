@@ -42,21 +42,22 @@ class BinanceConnector:
                 if sym not in ['USDT', 'USDC']: # Exclude stablecoins
                     cg_symbols.append(f"{sym}/USDT")
             
-            # Use top 25 highly volatile and fast-moving altcoins on Binance Futures
+            # Permanent blacklist of coins that user strictly prohibited (WIF, heavy coins, high-risk meme coins)
+            BLACKLIST = ["WIF/USDT", "BTC/USDT", "ETH/USDT", "BNB/USDT", "PEPE/USDT", "SHIB/USDT", "BONK/USDT", "FLOKI/USDT", "POPCAT/USDT"]
+            
+            # Fast, high-liquidity, clean-momentum coins for instant 1-2 min scalping
             fast_altcoins = [
-                "WIF/USDT", "DOGE/USDT", "SUI/USDT", "NEAR/USDT", "SOL/USDT",
-                "PEPE/USDT", "SHIB/USDT", "AVAX/USDT", "APT/USDT", "FET/USDT",
-                "INJ/USDT", "SEI/USDT", "TIA/USDT", "RENDER/USDT", "GALA/USDT",
-                "OP/USDT", "ARB/USDT", "LINK/USDT", "ENA/USDT", "JUP/USDT",
-                "BONK/USDT", "FLOKI/USDT", "POPCAT/USDT", "FTM/USDT", "TON/USDT"
+                "SUI/USDT", "NEAR/USDT", "SOL/USDT", "DOGE/USDT", "AVAX/USDT",
+                "APT/USDT", "ARB/USDT", "LINK/USDT", "FET/USDT", "INJ/USDT",
+                "SEI/USDT", "TIA/USDT", "RENDER/USDT", "OP/USDT", "ENA/USDT",
+                "JUP/USDT", "FTM/USDT", "TON/USDT", "GALA/USDT"
             ]
             
             combined = fast_altcoins + cg_symbols
-            # Remove duplicates while preserving order
+            # Strictly filter out blacklisted coins
             unique_pairs = []
-            heavy_coins = ["BTC/USDT", "ETH/USDT", "BNB/USDT"]
             for pair in dict.fromkeys(combined):
-                if pair not in heavy_coins:
+                if pair not in BLACKLIST and not any(b in pair for b in ["WIF", "BTC", "ETH", "BNB"]):
                     unique_pairs.append(pair)
             
             return unique_pairs[:limit]
@@ -64,10 +65,9 @@ class BinanceConnector:
         except Exception as e:
             print(f"CoinGecko Error, falling back: {e}")
             return [
-                "WIF/USDT", "DOGE/USDT", "SUI/USDT", "NEAR/USDT", "SOL/USDT",
-                "PEPE/USDT", "SHIB/USDT", "AVAX/USDT", "APT/USDT", "FET/USDT",
-                "INJ/USDT", "SEI/USDT", "TIA/USDT", "RENDER/USDT", "GALA/USDT",
-                "OP/USDT", "ARB/USDT", "LINK/USDT", "ENA/USDT", "JUP/USDT"
+                "SUI/USDT", "NEAR/USDT", "SOL/USDT", "DOGE/USDT", "AVAX/USDT",
+                "APT/USDT", "ARB/USDT", "LINK/USDT", "FET/USDT", "INJ/USDT",
+                "SEI/USDT", "TIA/USDT", "RENDER/USDT", "OP/USDT", "ENA/USDT", "JUP/USDT"
             ][:limit]
 
     def execute_trade(self, symbol: str, side: str, amount_usdt: float, current_price: float, tp_price: float = None, sl_price: float = None, api_key: str = None, api_secret: str = None) -> dict:

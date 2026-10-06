@@ -117,6 +117,10 @@ class SingleScanRequest(BaseModel):
 async def scan_single_token(req: SingleScanRequest):
     """Scans a single token and returns immediately."""
     sym = req.symbol
+    # Strict User Blacklist: Absolutely never touch WIF, BTC, ETH, BNB or high-slippage memes
+    if any(b in sym.upper() for b in ["WIF", "BTC", "ETH", "BNB", "PEPE", "SHIB", "BONK", "FLOKI"]):
+        return {"status": "error", "symbol": sym, "message": "Blacklisted token"}
+        
     try:
         if req.platform.lower() == "binance":
             # Switch to 1m timeframe for ULTRA FAST micro-scalping signals
@@ -175,14 +179,14 @@ async def scan_single_token(req: SingleScanRequest):
         
         decision_result = orchestrator.evaluate_setup(market_data)
         
-        # Calculate EXACT 2-Minute Scalping parameters
+        # Calculate EXACT 1-2 Minute Scalping parameters (50 - 100 PKR Fast Profit)
         price = market_data["current_price"]
         is_buy = ltf_bias == "bullish"
         
-        # Ultra-Fast Scalping: 0.25% Take Profit (Extremely quick, guarantees 50-100+ PKR on standard margin)
-        # 15.0% Stop Loss (Massively wide, essentially "No Loss" approach, holds until green)
-        sl_pct = 0.15 # 15.0% SL
-        tp_pct = 0.0025 # 0.25% TP
+        # Fast Scalp TP: 0.30% (Hits in 1 to 2 candles on 1m chart)
+        # Tight Protection SL: 0.75% (Tight protection, never lets a bad trade create heavy loss)
+        tp_pct = 0.0030 # 0.30% TP
+        sl_pct = 0.0075 # 0.75% SL
         
         stop_loss = price * (1 - sl_pct) if is_buy else price * (1 + sl_pct)
         take_profit = price * (1 + tp_pct) if is_buy else price * (1 - tp_pct)
