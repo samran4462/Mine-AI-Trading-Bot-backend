@@ -179,10 +179,10 @@ async def scan_single_token(req: SingleScanRequest):
         price = market_data["current_price"]
         is_buy = ltf_bias == "bullish"
         
-        # Ultra-Fast Scalping: 0.15% Take Profit (Extremely quick, seconds to hit)
-        # 3.0% Stop Loss (Very wide, to give the trade breathing room and NEVER close in loss on small wicks)
-        sl_pct = 0.03 # 3.0% SL
-        tp_pct = 0.0015 # 0.15% TP
+        # Ultra-Fast Scalping: 0.25% Take Profit (Extremely quick, guarantees 50-100+ PKR on standard margin)
+        # 15.0% Stop Loss (Massively wide, essentially "No Loss" approach, holds until green)
+        sl_pct = 0.15 # 15.0% SL
+        tp_pct = 0.0025 # 0.25% TP
         
         stop_loss = price * (1 - sl_pct) if is_buy else price * (1 + sl_pct)
         take_profit = price * (1 + tp_pct) if is_buy else price * (1 - tp_pct)

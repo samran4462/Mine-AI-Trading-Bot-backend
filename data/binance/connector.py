@@ -42,12 +42,16 @@ class BinanceConnector:
                 if sym not in ['USDT', 'USDC']: # Exclude stablecoins
                     cg_symbols.append(f"{sym}/USDT")
             
-            # Combine with absolute strongest majors to ensure liquidity
-            majors = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT"]
+            # Use highly volatile and fast-moving altcoins instead of slow heavy majors
+            fast_altcoins = ["PEPE/USDT", "WIF/USDT", "DOGE/USDT", "SHIB/USDT", "SUI/USDT", "INJ/USDT", "FET/USDT"]
             
-            combined = majors + cg_symbols
+            combined = fast_altcoins + cg_symbols
             # Remove duplicates while preserving order
-            unique_pairs = list(dict.fromkeys(combined))
+            unique_pairs = []
+            heavy_coins = ["BTC/USDT", "ETH/USDT", "BNB/USDT"]
+            for pair in dict.fromkeys(combined):
+                if pair not in heavy_coins:
+                    unique_pairs.append(pair)
             
             return unique_pairs[:limit]
             

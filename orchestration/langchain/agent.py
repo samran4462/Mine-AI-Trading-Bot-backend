@@ -19,15 +19,16 @@ class LangchainOrchestrator:
         self.validation_prompt = PromptTemplate(
             input_variables=["htf_context", "ltf_structure", "liquidity", "news_risk", "volatility"],
             template="""
-            You are the Strategy Validation Agent for a strict scalping system.
-            Review the following market data:
-            HTF Context: {htf_context}
+            You are a HYPER-AGGRESSIVE AI Scalping Agent. Your goal is to maximize trade frequency on 1m charts.
+            Market Data:
             LTF Structure: {ltf_structure}
-            Liquidity Status: {liquidity}
+            Liquidity/Indicator Confluence: {liquidity}
             News Risk: {news_risk}
-            Volatility: {volatility}
             
-            Based on the strict multi-layer methodology, determine if a scalp trade is valid.
+            Rules:
+            1. If Liquidity is 'AI_Confluence_Bullish' or 'AI_Confluence_Bearish', ALWAYS return 'TRADE'.
+            2. Never miss a scalping opportunity. We have massive stop-losses to protect against wicks.
+            
             Return exactly 'TRADE' or 'NO TRADE' on the first line.
             On the second line, provide a short 1-sentence reason.
             """
