@@ -229,4 +229,60 @@ class BinanceConnector:
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
+    def close_position(self, symbol: str, api_key: str = None, api_secret: str = None) -> dict:
+        """Immediately closes an active Binance Futures position at market price and cancels pending TP/SL orders."""
+        use_key = api_key or self.api_key
+        use_secret = api_secret or self.api_secret
+        if not use_key or not use_secret:
+            return {"status": "error", "message": "Keys missing"}
+        try:
+            exec_exchange = ccxt.binance({
+                'apiKey': use_key,
+                'secret': use_secret,
+                'enableRateLimit': True,
+                'options': {
+                    'defaultType': 'future',
+                    'adjustForTimeDifference': True,
+                    'recvWindow': 60000
+                }
+            })
+            exec_exchange.load_time_difference()
+            exec_exchange.load_markets()
+            
+            # Normalize symbol for CCXT (e.g. SUI/USDT)
+            sym = symbol
+            if ":" in sym:
+                sym = sym.split(":")[0]
+            if "/" not in sym:
+                sym = f"{sym.replace('USDT', '')}/USDT"
+                
+            # Cancel open TP/SL orders for this symbol first
+            try:
+                exec_exchange.cancel_all_orders(sym)
+            except Exception:
+                pass
+                
+            # Find the exact open amount
+            positions = exec_exchange.fetch_positions([sym])
+            active_pos = [p for p in positions if abs(float(p.get('info', {}).get('positionAmt', 0))) > 0]
+            if not active_pos:
+                return {"status": "success", "message": "No active position to close."}
+                
+            pos = active_pos[0]
+            amt = float(pos.get('info', {}).get('positionAmt', 0))
+            close_side = 'sell' if amt > 0 else 'buy'
+            abs_amt = abs(amt)
+            
+            # Place instant market close order
+            close_order = exec_exchange.create_order(
+                symbol=sym,
+                type='market',
+                side=close_side,
+                amount=abs_amt,
+                params={'reduceOnly': True}
+            )
+            return {"status": "success", "message": f"Position {sym} closed instantly at market!", "order": close_order}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
 binance_connector = BinanceConnector()

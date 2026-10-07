@@ -183,10 +183,10 @@ async def scan_single_token(req: SingleScanRequest):
         price = market_data["current_price"]
         is_buy = ltf_bias == "bullish"
         
-        # Fast Scalp TP: 0.30% (Hits in 1 to 2 candles on 1m chart)
-        # Tight Protection SL: 0.75% (Tight protection, never lets a bad trade create heavy loss)
-        tp_pct = 0.0030 # 0.30% TP
-        sl_pct = 0.0075 # 0.75% SL
+        # Fast Scalp TP: 0.20% (Generates $0.05 - $0.10+ profit in 30-90 seconds on 1m chart)
+        # Tight Protection SL: 0.70% (Prevents any deep drawdown)
+        tp_pct = 0.0020 # 0.20% TP
+        sl_pct = 0.0070 # 0.70% SL
         
         stop_loss = price * (1 - sl_pct) if is_buy else price * (1 + sl_pct)
         take_profit = price * (1 + tp_pct) if is_buy else price * (1 - tp_pct)

@@ -81,6 +81,23 @@ async def close_trade(reason: str = "target_reached"):
     success = trade_state_manager.close_trade(reason)
     return {"status": "success" if success else "failed", "active_position": trade_state_manager.active_position}
 
+class CloseLivePositionRequest(BaseModel):
+    platform: str
+    symbol: str
+    binance_api_key: str = None
+    binance_api_secret: str = None
+
+@router.post("/close-live-position")
+async def close_live_position(req: CloseLivePositionRequest):
+    """Closes an active live position immediately on the exchange at market price."""
+    if req.platform.lower() == "binance":
+        from data.binance.connector import binance_connector
+        res = binance_connector.close_position(req.symbol, req.binance_api_key, req.binance_api_secret)
+        if res.get("status") == "success":
+            trade_state_manager.close_trade("live_market_exit")
+        return res
+    return {"status": "error", "message": "Not implemented"}
+
 class SyncRequest(BaseModel):
     platform: str
     binance_api_key: str = None
