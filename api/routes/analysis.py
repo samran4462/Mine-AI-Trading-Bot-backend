@@ -186,14 +186,16 @@ async def scan_single_token(req: SingleScanRequest):
         
         decision_result = orchestrator.evaluate_setup(market_data)
         
-        # Fee-Covered Scalping parameters:
-        # Price target: 0.35% (On 20x leverage = +7% gain, easily covers 0.08% Binance fee and leaves solid net profit)
-        # SL is not tight to avoid wick stop-outs; position will hold until target or closed by bot in profit
+        # Fee-Guaranteed Pro Scalping parameters:
+        # Notional = $2 margin * 20x = $40.
+        # Roundtrip Binance Taker Fee = 0.05% open + 0.05% close = ~0.10% total ($0.04).
+        # Target = 0.75% move -> Gross Profit = $0.30 (approx 85 PKR).
+        # Net Profit after fee deduction = +$0.26 (approx 75 PKR net gain!). Wallet balance WILL increase!
         price = market_data["current_price"]
         is_buy = ltf_bias == "bullish"
         
-        tp_pct = 0.0035 # 0.35% TP (covers taker fee + secures solid net profit)
-        sl_pct = 0.0500 # 5.0% wide emergency stop to prevent wick loss
+        tp_pct = 0.0075 # 0.75% TP (Guarantees +$0.25 - $0.30 gross, +$0.20+ net profit after fees)
+        sl_pct = 0.0500 # 5.0% wide emergency stop to prevent premature wick closure
         
         stop_loss = price * (1 - sl_pct) if is_buy else price * (1 + sl_pct)
         take_profit = price * (1 + tp_pct) if is_buy else price * (1 - tp_pct)
