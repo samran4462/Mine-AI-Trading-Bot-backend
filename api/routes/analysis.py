@@ -163,15 +163,15 @@ async def scan_single_token(req: SingleScanRequest):
         liquidity_status = "none"
         
         # High-Probability Mean Reversion + Trend Alignment:
-        # Bullish: Price touched lower BB, RSI oversold, AND price starting to turn up (close > open or RSI ticking up)
-        is_bullish_reversal = (latest['close'] <= latest['lower_bb'] or rsi_val <= 30) and (latest['close'] >= latest['open'] or rsi_val > prev.get('rsi', 0))
-        # Bearish: Price touched upper BB, RSI overbought, AND price starting to turn down (close < open or RSI ticking down)
-        is_bearish_reversal = (latest['close'] >= latest['upper_bb'] or rsi_val >= 70) and (latest['close'] <= latest['open'] or rsi_val < prev.get('rsi', 100))
+        # Bullish: Price at/below lower BB or RSI <= 32, AND current 1m candle is strictly GREEN (close > open) with rising RSI
+        is_bullish_reversal = (latest['close'] <= latest['lower_bb'] or rsi_val <= 32) and (latest['close'] > latest['open']) and (rsi_val > prev.get('rsi', 0))
+        # Bearish: Price at/above upper BB or RSI >= 68, AND current 1m candle is strictly RED (close < open) with falling RSI
+        is_bearish_reversal = (latest['close'] >= latest['upper_bb'] or rsi_val >= 68) and (latest['close'] < latest['open']) and (rsi_val < prev.get('rsi', 100))
         
-        if is_bullish_reversal and rsi_val <= 38:
+        if is_bullish_reversal and rsi_val <= 42:
             ltf_bias = "bullish"
             liquidity_status = "AI_Confluence_Bullish"
-        elif is_bearish_reversal and rsi_val >= 62:
+        elif is_bearish_reversal and rsi_val >= 58:
             ltf_bias = "bearish"
             liquidity_status = "AI_Confluence_Bearish"
             
