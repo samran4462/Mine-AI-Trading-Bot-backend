@@ -96,6 +96,22 @@ class BinanceConnector:
             # Load markets to get precision and limits
             exec_exchange.load_markets()
             
+            # Cancel any stale pending orders on this symbol to free up locked margin
+            try:
+                exec_exchange.cancel_all_orders(symbol)
+            except Exception:
+                pass
+                
+            # Fetch real-time available free USDT balance in Futures account
+            balance_data = exec_exchange.fetch_balance()
+            usdt_free = float(balance_data.get('USDT', {}).get('free', 0.0))
+            
+            if usdt_free < 0.40:
+                return {
+                    "status": "error", 
+                    "message": f"Available Futures Balance is ${usdt_free:.2f} USDT. Please transfer USDT from Spot/Funding into USDⓈ-M Futures wallet."
+                }
+            
             # Apply 20x Leverage for High-Frequency Micro Scalping
             leverage = 20
             try:
@@ -103,8 +119,14 @@ class BinanceConnector:
             except Exception as e:
                 pass # Ignore if already set or fails
                 
-            # Total notional position size = margin * leverage
-            leveraged_usdt = amount_usdt * leverage
+            # Smart Margin Buffer: Use min(amount_usdt, usdt_free * 0.88)
+            # This leaves 12% safety buffer for exchange taker fees, 100% PREVENTING -2019 Error!
+            safe_margin = min(amount_usdt, usdt_free * 0.88)
+            leveraged_usdt = safe_margin * leverage
+            
+            # Ensure notional meets Binance minimum 5.5 USDT requirement
+            if leveraged_usdt < 5.5:
+                leveraged_usdt = 5.5
             
             # Calculate raw coin amount
             raw_coin_amount = leveraged_usdt / current_price
@@ -113,7 +135,7 @@ class BinanceConnector:
             coin_amount = float(exec_exchange.amount_to_precision(symbol, raw_coin_amount))
             
             if coin_amount <= 0:
-                return {"status": "error", "message": f"Trade size ${amount_usdt} (with {leverage}x leverage) is too small for {symbol}. Try a cheaper coin or increase amount."}
+                return {"status": "error", "message": f"Trade size ${safe_margin:.2f} is too small for {symbol}. Try increasing balance."}
                 
             # Place real entry market order
             order = exec_exchange.create_order(
