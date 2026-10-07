@@ -143,28 +143,35 @@ async def scan_single_token(req: SingleScanRequest):
         # 2. Bollinger Bands Calculation (Best for Fast, Safe 1m Scalping)
         df['sma_20'] = df['close'].rolling(window=20).mean()
         df['std_20'] = df['close'].rolling(window=20).std()
-        df['upper_bb'] = df['sma_20'] + (2.0 * df['std_20']) # 2.0 Standard Deviations (Standard Scalper Setting)
+        df['upper_bb'] = df['sma_20'] + (2.0 * df['std_20'])
         df['lower_bb'] = df['sma_20'] - (2.0 * df['std_20'])
         
+        # 3. EMA Trend Filter (Never trade against the micro-trend!)
+        df['ema_9'] = df['close'].ewm(span=9, adjust=False).mean()
+        df['ema_21'] = df['close'].ewm(span=21, adjust=False).mean()
+        
         latest = df.iloc[-1]
+        prev = df.iloc[-2]
         rsi_val = latest.get('rsi', 50)
         if pd.isna(rsi_val): rsi_val = 50
+        
+        ema_9 = latest.get('ema_9', latest['close'])
+        ema_21 = latest.get('ema_21', latest['close'])
         
         # Determine PROFESSIONAL CONFLUENCE Bias
         ltf_bias = "neutral"
         liquidity_status = "none"
         
-        # High-Frequency AI Mean-Reversion (Elastic Snapback Strategy)
-        is_bb_oversold = latest['close'] <= latest['lower_bb']
-        is_bb_overbought = latest['close'] >= latest['upper_bb']
+        # High-Probability Mean Reversion + Trend Alignment:
+        # Bullish: Price touched lower BB, RSI oversold, AND price starting to turn up (close > open or RSI ticking up)
+        is_bullish_reversal = (latest['close'] <= latest['lower_bb'] or rsi_val <= 30) and (latest['close'] >= latest['open'] or rsi_val > prev.get('rsi', 0))
+        # Bearish: Price touched upper BB, RSI overbought, AND price starting to turn down (close < open or RSI ticking down)
+        is_bearish_reversal = (latest['close'] >= latest['upper_bb'] or rsi_val >= 70) and (latest['close'] <= latest['open'] or rsi_val < prev.get('rsi', 100))
         
-        # Bullish Snapback: Touching lower band with low RSI, or deep oversold RSI
-        if (is_bb_oversold and rsi_val <= 38) or (rsi_val <= 28):
+        if is_bullish_reversal and rsi_val <= 38:
             ltf_bias = "bullish"
             liquidity_status = "AI_Confluence_Bullish"
-                
-        # Bearish Snapback: Touching upper band with high RSI, or deep overbought RSI
-        elif (is_bb_overbought and rsi_val >= 62) or (rsi_val >= 72):
+        elif is_bearish_reversal and rsi_val >= 62:
             ltf_bias = "bearish"
             liquidity_status = "AI_Confluence_Bearish"
             
@@ -179,14 +186,14 @@ async def scan_single_token(req: SingleScanRequest):
         
         decision_result = orchestrator.evaluate_setup(market_data)
         
-        # Calculate EXACT 1-2 Minute Scalping parameters (50 - 100 PKR Fast Profit)
+        # Fee-Covered Scalping parameters:
+        # Price target: 0.35% (On 20x leverage = +7% gain, easily covers 0.08% Binance fee and leaves solid net profit)
+        # SL is not tight to avoid wick stop-outs; position will hold until target or closed by bot in profit
         price = market_data["current_price"]
         is_buy = ltf_bias == "bullish"
         
-        # Fast Scalp TP: 0.20% (Generates $0.05 - $0.10+ profit in 30-90 seconds on 1m chart)
-        # Tight Protection SL: 0.70% (Prevents any deep drawdown)
-        tp_pct = 0.0020 # 0.20% TP
-        sl_pct = 0.0070 # 0.70% SL
+        tp_pct = 0.0035 # 0.35% TP (covers taker fee + secures solid net profit)
+        sl_pct = 0.0500 # 5.0% wide emergency stop to prevent wick loss
         
         stop_loss = price * (1 - sl_pct) if is_buy else price * (1 + sl_pct)
         take_profit = price * (1 + tp_pct) if is_buy else price * (1 - tp_pct)
